@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BuyerAccountController;
 use App\Models\User;
 use App\Mail\Support;
 use Illuminate\Stripe;
@@ -44,6 +45,7 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\MembershipController;
+use App\Mail\DiscountProduct as MailDiscountProduct;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,6 +61,7 @@ use App\Http\Controllers\MembershipController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
 
 // buyer part api ----------------------------------------------------
 
@@ -79,6 +82,22 @@ Route::prefix('buyer')->group(function () {
 
     Route::get('/cart/remove/all/{uid}/{bid}', [CartController::class, 'removeAll']);
     Route::get('/cart/remove/one/{cartid}', [CartController::class, 'removeOne']);
+
+    Route::post('/email/change/password/save', [BuyerAccountController::class, 'change_password']);
+
+
+    Route::post('/email/forgot/password/save', function (Request $request) {
+        $chkPass = ResetPassword::where('token', $request->token)->select('token', 'email')->get();
+
+        if(count($chkPass) > 0) {
+            User::where('email', $chkPass[0]->email)->update(['password' => md5($request->password)]);
+            ResetPassword::where('token', $request->token)->delete();
+            return response()->json(['succ' => 'Your password has been changed successfully.']);
+        } else {
+            return response()->json(['msg' => 'Token not matched. Please try again later.']);
+        }
+
+    });
 
 
 
@@ -222,6 +241,17 @@ Route::middleware(['log_token'])->prefix('u')->group(function () {
         return json_encode([$data->txt, $data->id]);
     });
 
+    Route::get('/founder/{slug}', function ($slug) {
+
+        $user = User::where('company_slug', $slug)->select('id')->first();
+
+        $data = BrandInfo::where('user_id', $user->id)
+        ->where('key', 'founder_story')
+        ->select('txt', 'id')
+        ->first();
+        return json_encode([$data->txt, $data->id]);
+    });
+
     Route::get('/vendor/brand/description/{id}', function ($id) {
         $data = BrandInfo::where('user_id', $id)
         ->where('key', 'brand_description')
@@ -238,6 +268,16 @@ Route::middleware(['log_token'])->prefix('u')->group(function () {
         return json_encode($data->txt);
     });
 
+    Route::get('/people/{slug}', function ($slug) {
+        $user = User::where('company_slug', $slug)->select('id')->first();
+
+        $data = BrandInfo::where('user_id', $user->id)
+        ->where('key', 'people_story')
+        ->select('txt', 'id')
+        ->first();
+        return json_encode($data->txt);
+    });
+
     Route::get('/vendor/brand/story/{id}', function ($id) {
         $data = BrandInfo::where('user_id', $id)
         ->where('key', 'brand_story')
@@ -246,8 +286,28 @@ Route::middleware(['log_token'])->prefix('u')->group(function () {
         return json_encode($data->txt);
     });
 
+    Route::get('/brand/story/{slug}', function ($slug) {
+        $user = User::where('company_slug', $slug)->select('id')->first();
+
+        $data = BrandInfo::where('user_id', $user->id)
+        ->where('key', 'brand_story')
+        ->select('txt', 'id')
+        ->first();
+        return json_encode($data->txt);
+    });
+
     Route::get('/vendor/brand/video/{id}', function ($id) {
         $data = BrandInfo::where('user_id', $id)
+        ->where('key', 'brand_video')
+        ->select('txt', 'id')
+        ->first();
+        return json_encode($data->txt);
+    });
+
+    Route::get('/brand/video/{slug}', function ($slug) {
+        $user = User::where('company_slug', $slug)->select('id')->first();
+
+        $data = BrandInfo::where('user_id', $user->id)
         ->where('key', 'brand_video')
         ->select('txt', 'id')
         ->first();
@@ -513,8 +573,22 @@ Route::middleware(['log_token'])->prefix('u')->group(function () {
         return response()->json($data);
     });
 
+    Route::get('/brand/photos_of_brand/{slug}', function ($slug) {
+        $user = User::where('company_slug', $slug)->select('id')->first();
+
+        $data  = BrandPhoto::where('user_id', '=', $user->id)->whereIn('type', ['photos_of_brand'])->select('url', 'id', 'type')->get();
+        return response()->json($data);
+    });
+
     Route::get('/vendor/brand/faq/{id}', function ($id) {
         $data  = BrandFaq::where('user_id', '=', $id)->select('question', 'answer')->get();
+        return response()->json($data);
+    });
+
+    Route::get('/brand/faq/{slug}', function ($slug) {
+        $user = User::where('company_slug', $slug)->select('id')->first();
+
+        $data  = BrandFaq::where('user_id', '=', $user->id)->select('question', 'answer')->get();
         return response()->json($data);
     });
 
@@ -1570,6 +1644,7 @@ Route::post('/vendor/signup', function (Request $request) {
         $data = array(
             'brand' => $user->company ?? '',
             'slug' => $user->company_slug ?? '',
+            'brand_email' => $user->email ?? '',
             'products' => $prods,
             'discount_products' => $discountProds ?? '',
             'cover_photo' => $brandPhotoCover->url ?? '',
@@ -2128,7 +2203,75 @@ Route::post('/vendor/signup', function (Request $request) {
     });
 
 
+    Route::get('/discount/product/send/email/{id}', function ($id) {
 
+        try {
+            $discount = DiscountProduct::where('id', $id)->get();
+
+            $emailData = [
+                'discounts' => $discount,
+                'name' => 'Bajcloud',
+                'buyer' => 'Sumanta'
+            ];
+
+            Mail::to('sumantasam1990@gmail.com')->send(new MailDiscountProduct($emailData));
+
+            return response()->json('success');
+
+        } catch(\Throwable $th) {
+            return response()->json(['err' => $th->getMessage()]);
+        }
+
+
+
+    });
+
+
+
+    Route::get('/vendor/change/brand/name/{id}/{name}', function ($id, $name) {
+
+        try {
+            if(trim($name) != '') {
+
+                User::where('id', $id)->update(['company' => $name, 'company_slug' => Str::slug($name, '-')]);
+
+                return response()->json('success');
+            }
+        } catch(\Throwable $th) {
+            $a = $th->getMessage();
+
+            if (preg_match('/\bDuplicate entry\b/', $a)) {
+                return response()->json(['err' => 'This name already exist.']);
+            } else {
+                return response()->json(['err' => $th->getMessage()]);
+            }
+
+        }
+
+
+    });
+
+    Route::get('/vendor/change/brand/slug/{id}/{slug}', function ($id, $slug) {
+
+        try {
+            if(trim($slug) != '') {
+
+                User::where('id', $id)->update(['company_slug' => Str::slug($slug, '-')]);
+
+                return response()->json('success');
+            }
+        } catch(\Throwable $th) {
+            $a = $th->getMessage();
+
+            if (preg_match('/\bDuplicate entry\b/', $a)) {
+                return response()->json(['err' => 'This Url or slug already exist.']);
+            } else {
+                return response()->json(['err' => $th->getMessage()]);
+            }
+
+        }
+
+    });
 
 
 

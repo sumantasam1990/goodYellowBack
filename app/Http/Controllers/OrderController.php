@@ -21,7 +21,7 @@ class OrderController extends Controller
                 ->join('shipping_address', 'orders.order_uniq', 'shipping_address.ship_order_no')
                 ->where('orders.buyer_id', '=', $bid)
                 ->where('orders.order_status', '=', 0)
-                ->orderBy('orders.id')
+                ->orderBy('orders.id', 'DESC')
                 ->get();
 
         return response()->json($orders);
@@ -36,7 +36,7 @@ class OrderController extends Controller
                 ->join('shipping_address', 'orders.order_uniq', 'shipping_address.ship_order_no')
                 ->where('orders.buyer_id', '=', $bid)
                 ->where('orders.order_status', '=', 1)
-                ->orderBy('orders.id')
+                ->orderBy('orders.id', 'DESC')
                 ->get();
 
         return response()->json($orders);
@@ -51,7 +51,7 @@ class OrderController extends Controller
                 ->join('shipping_address', 'orders.order_uniq', 'shipping_address.ship_order_no')
                 ->where('orders.buyer_id', '=', $bid)
                 ->where('orders.order_status', '=', 2)
-                ->orderBy('orders.id')
+                ->orderBy('orders.id', 'DESC')
                 ->get();
 
         return response()->json($orders);
@@ -68,8 +68,8 @@ class OrderController extends Controller
                 ->join('shipping_address', 'orders.order_uniq', 'shipping_address.ship_order_no')
                 ->where('orders.seller_id', '=', $bid)
                 ->where('orders.order_status', '=', 0)
-                ->select('products.p_uniq', 'products.p_name', 'orders.product_discount_price', 'orders.order_quantity', 'shipping_address.address', 'shipping_address.phone', 'shipping_address.email', 'payment_orders.tran_receipt_url', 'buyer_users.fname', 'buyer_users.lname', 'buyer_users.email', 'orders.id as order_id')
-                ->orderBy('orders.id')
+                ->select('products.p_uniq', 'products.p_name', 'orders.product_discount_price', 'orders.order_quantity', 'shipping_address.address', 'shipping_address.phone', 'shipping_address.email', 'payment_orders.tran_receipt_url', 'buyer_users.fname', 'buyer_users.lname', 'buyer_users.email', 'orders.id as order_id', 'shipping_address.full_name', 'orders.order_shipping_cost', 'orders.created_at')
+                ->orderBy('orders.id', 'DESC')
                 ->get();
 
         return response()->json($orders);
@@ -84,8 +84,8 @@ class OrderController extends Controller
                 ->join('shipping_address', 'orders.order_uniq', 'shipping_address.ship_order_no')
                 ->where('orders.seller_id', '=', $bid)
                 ->where('orders.order_status', '=', 1)
-                ->select('products.p_uniq', 'products.p_name', 'orders.product_discount_price', 'orders.order_quantity', 'shipping_address.address', 'shipping_address.phone', 'shipping_address.email', 'payment_orders.tran_receipt_url', 'buyer_users.fname', 'buyer_users.lname', 'buyer_users.email', 'orders.id as order_id')
-                ->orderBy('orders.id')
+                ->select('products.p_uniq', 'products.p_name', 'orders.product_discount_price', 'orders.order_quantity', 'shipping_address.address', 'shipping_address.phone', 'shipping_address.email', 'payment_orders.tran_receipt_url', 'buyer_users.fname', 'buyer_users.lname', 'buyer_users.email', 'orders.id as order_id', 'shipping_address.full_name', 'orders.order_shipping_cost', 'orders.created_at')
+                ->orderBy('orders.id', 'DESC')
                 ->get();
 
         return response()->json($orders);
@@ -100,8 +100,8 @@ class OrderController extends Controller
                 ->join('shipping_address', 'orders.order_uniq', 'shipping_address.ship_order_no')
                 ->where('orders.seller_id', '=', $bid)
                 ->where('orders.order_status', '=', 2)
-                ->select('products.p_uniq', 'products.p_name', 'orders.product_discount_price', 'orders.order_quantity', 'shipping_address.address', 'shipping_address.phone', 'shipping_address.email', 'payment_orders.tran_receipt_url', 'buyer_users.fname', 'buyer_users.lname', 'buyer_users.email', 'orders.id as order_id')
-                ->orderBy('orders.id')
+                ->select('products.p_uniq', 'products.p_name', 'orders.product_discount_price', 'orders.order_quantity', 'shipping_address.address', 'shipping_address.phone', 'shipping_address.email', 'payment_orders.tran_receipt_url', 'buyer_users.fname', 'buyer_users.lname', 'buyer_users.email', 'orders.id as order_id', 'shipping_address.full_name', 'orders.order_shipping_cost', 'orders.created_at')
+                ->orderBy('orders.id', 'DESC')
                 ->get();
 
         return response()->json($orders);

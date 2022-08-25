@@ -185,6 +185,7 @@ class CheckoutController extends Controller
                         $shipping = new ShippingAddress;
 
                         $shipping->buyer_id = $request->buyer_id;
+                        $shipping->full_name = $request->full_name;
                         $shipping->address = $request->address;
                         $shipping->phone = $request->phone;
                         $shipping->email = $request->email;
@@ -383,6 +384,8 @@ class CheckoutController extends Controller
 
             // end shipping cost calculation --------------------------
 
-        return response()->json(['brand' => $user->company, 'total' => array_sum($plus_price) + array_sum($ship_cost)]);
+            $shiipingAddress = ShippingAddress::where('buyer_id', $bid)->orderBy('id', 'DESC')->first();
+
+        return response()->json(['brand' => $user->company, 'total' => array_sum($plus_price) + array_sum($ship_cost), 'ship_addr' => $shiipingAddress]);
     }
 }
