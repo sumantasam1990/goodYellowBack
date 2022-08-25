@@ -25,6 +25,12 @@ class CartController extends Controller
 
         try{
 
+            $user = BuyerUser::where('id', $request->buyer_id)->select('email_verified')->first();
+
+            if($user->email_verified == '') {
+                return response()->json(['status' => 0, 'msg' => 'Sorry! Please verify your email id before add to cart any product.']);
+            }
+
             $today = date('Y-m-d H:i:s');
 
             $product = Product::where('p_uniq', $request->product)->select('user_id', 'inventory', 'p_uniq', 'discount_percentage')->first();
@@ -125,6 +131,8 @@ class CartController extends Controller
             ->get();
 
 
+
+
         foreach($carts as $c) {
             $products_data = [];
             $plus_price = [];
@@ -134,52 +142,57 @@ class CartController extends Controller
             $addtocarts = AddToCart::where('user_id', $c->user_id)->where('buyer_id', $id)->get();
 
 
+
             foreach($addtocarts as $add) {
 
 
                 $product = Product::where('p_uniq', $add->product_id)->select('id', 'p_name', 'user_id', 'p_price as price', 'discount_percentage as discount', 'shipping_cost')->first();
 
-                // ------------ get variation ------------
+                if($product) {
+                    // ------------ get variation ------------
 
-                $variations = Variations::where('product_id', $product->id)
-                            ->where('var_key', $add->variation_size)
-                            ->where('var_val', $add->variation_color)
-                            ->select('var_key', 'var_val', 'inventory', 'price')
-                            ->get();
+                    $variations = Variations::where('product_id', $product?->id)
+                                ->where('var_key', $add->variation_size)
+                                ->where('var_val', $add->variation_color)
+                                ->select('var_key', 'var_val', 'inventory', 'price')
+                                ->get();
 
 
-                // end variation ------------------------
+                    // end variation ------------------------
 
-                if(count($variations) > 0) {
+                    if(count($variations) > 0) {
 
-                    $price = number_format($variations[0]->price, 2);
-                    $price_discount = number_format($variations[0]->price - ($variations[0]->price*$product->discount)/100, 2);
+                        $price = number_format($variations[0]->price, 2);
+                        $price_discount = number_format($variations[0]->price - ($variations[0]->price*$product->discount)/100, 2);
 
-                    $price_discount = $price_discount;
+                        $price_discount = $price_discount;
 
-                } else {
+                    } else {
 
-                    $price = number_format($product->price, 2);
-                    $price_discount = number_format($product->price - ($product->price*$product->discount)/100, 2);
+                        $price = number_format($product?->price, 2);
+                        $price_discount = number_format($product?->price - ($product?->price*$product?->discount)/100, 2);
 
-                    $price_discount = $price_discount;
+                        $price_discount = $price_discount;
 
+                    }
+
+                    $products_data[] = [
+
+                        'price' => $price,
+                        'discount_price' => $price_discount,
+                        'product' => $product?->p_name,
+                        'product_id' => $product?->id,
+                        'shipping_cost' => $product?->shipping_cost,
+                        'p_uniq' => $add->product_id,
+                        'var_size' => count($variations) > 0 ? $variations[0]->var_key : '',
+                        'var_color' => count($variations) > 0 ? $variations[0]->var_val : '',
+                    ];
+
+                    $plus_price[] = $price_discount;
+                    $plus_quantity[] = $add->quantity;
                 }
 
-                $products_data[] = [
 
-                    'price' => $price,
-                    'discount_price' => $price_discount,
-                    'product' => $product->p_name,
-                    'product_id' => $product->id,
-                    'shipping_cost' => $product->shipping_cost,
-                    'p_uniq' => $add->product_id,
-                    'var_size' => count($variations) > 0 ? $variations[0]->var_key : '',
-                    'var_color' => count($variations) > 0 ? $variations[0]->var_val : '',
-                ];
-
-                $plus_price[] = $price_discount;
-                $plus_quantity[] = $add->quantity;
             }
 
             // start shipping cost calculation ------------------------
@@ -208,9 +221,9 @@ class CartController extends Controller
                 'brand_name' => $c->company,
                 'company_slug' => $c->company_slug,
                 'products' => $products_data,
-                'plus_price' => array_sum($plus_price),
+                'plus_price' => number_format(array_sum($plus_price), 2),
                 'plus_quantity' => array_sum($plus_quantity),
-                'total_shipping_cost' => array_sum($ship_cost),
+                'total_shipping_cost' => number_format(array_sum($ship_cost), 2),
             ];
 
 

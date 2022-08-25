@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\BuyerAccountController;
 use App\Models\User;
 use App\Mail\Support;
 use Illuminate\Stripe;
@@ -35,6 +34,7 @@ use App\Models\DiscountImages;
 use App\Models\BrandGoodPlanet;
 use App\Models\DiscountProduct;
 use App\Models\LeaderboardList;
+use App\Mail\MemberVerification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -45,8 +45,9 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\MembershipController;
+use App\Http\Controllers\BuyerAccountController;
 use App\Mail\DiscountProduct as MailDiscountProduct;
-
+use App\Http\Controllers\AlgorithmController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -71,6 +72,7 @@ Route::prefix('buyer')->group(function () {
     Route::get('/cart/{id}', [CartController::class, 'cart']);
 
     Route::post('/checkout', [CheckoutController::class, 'checkout']);
+
 
     Route::get('/checkout/brand/info/{uid}/{bid}', [CheckoutController::class, 'brand_info']);
 
@@ -98,6 +100,39 @@ Route::prefix('buyer')->group(function () {
         }
 
     });
+
+    Route::get('/email/verification/{token}', function ($token) {
+
+        try{
+            BuyerUser::where('verification_token', $token)->update(['email_verified' => date('Y-m-d H:i:s')]);
+
+            return response()->json('Your Email Has Been Successfully Verified.');
+
+
+        } catch(\Throwable $th) {
+            return response()->json('Token not matched. Please try again with a valid token.');
+        }
+
+    });
+
+    Route::get('/email/verification/check/{bid}', function ($bid) {
+
+        try{
+            $chk = BuyerUser::where('id', $bid)->select('email_verified')->get();
+
+            if(count($chk) > 0 && $chk[0]->email_verified == '') {
+                return response()->json(['info' => 'Please check your Inbox/SPAM folder to verify your email id.', 'stat' => 0]);
+            } else {
+                return response()->json(['info' => '', 'stat' => 1]);
+            }
+
+        } catch(\Throwable $th) {
+            return response()->json('error');
+        }
+
+    });
+
+
 
 
 
@@ -2057,6 +2092,9 @@ Route::post('/vendor/signup', function (Request $request) {
             if ($validator->fails()) {
                 return response()->json($validator->errors(), 200);
             } else {
+
+                $verifyTokenGenerate = md5(uniqid().time().date('dmY').$request->email);
+
                 $start_date = date('Y-m-d H:i:s');
                 $end_date = date('Y-m-d H:i:s', strtotime("+30 days"));
                 $token = md5(uniqid(). time(). $request->email);
@@ -2074,6 +2112,7 @@ Route::post('/vendor/signup', function (Request $request) {
                 $buyer->phone = $request->phone;
                 $buyer->token = $token;
                 $buyer->buyer_promo = $request->promo;
+                $buyer->verification_token = $verifyTokenGenerate;
 
                 $buyer->save();
 
@@ -2089,9 +2128,21 @@ Route::post('/vendor/signup', function (Request $request) {
 
                 $credit->save();
 
-                return response()->json(['succ' => 'success', 'token' => $token, 'email' => $request->email, 'id' => $buyer->id]);
-            }
+                // send verification email to registered user.
 
+                $emailData = [
+                    'name' => $request->fname . ' ' .$request->lname,
+                    'url' => env('FRONTEND_URL') . 'u/email/verification/' . $verifyTokenGenerate,
+                    'subject' => 'Verification Email From Good Yellow.'
+                ];
+
+                $sendMail = sendMemberVerificationEmail($request->email, $emailData);
+
+                if($sendMail) {
+                    return response()->json(['succ' => 'success', 'token' => $token, 'email' => $request->email, 'id' => $buyer->id]);
+                }
+
+            }
 
 
         } catch(\Throwable $th) {
@@ -2099,6 +2150,18 @@ Route::post('/vendor/signup', function (Request $request) {
         }
 
     });
+
+    function sendMemberVerificationEmail($email = '', $emailData = [])
+    {
+        try {
+            Mail::to($email)->send(new MemberVerification($emailData));
+
+            return true;
+        } catch(\Throwable $th) {
+            return true;
+        }
+
+    }
 
 
     Route::get('/buyer/subscribe/brand/{pid}/{bid}', function ($pid, $bid) {
@@ -2480,84 +2543,40 @@ Route::get('/claudia/level/three/subscribers/brands/{id}', function ($id) {
 
 
 
+Route::get('/level/one/discount/{id}/{min}/{max}', [AlgorithmController::class, 'discount_level_one']);
+Route::get('/level/two/discount/{id}/{min}/{max}', [AlgorithmController::class, 'discount_level_two']);
+Route::get('/level/three/discount/{id}/{min}/{max}', [AlgorithmController::class, 'discount_level_three']);
 
 
 
 
 
 
+    //-------------------------------------------------------------------------------------------------------------------
 
+    Route::get('/al/bal/chal', function () {
 
+        $data = [];
 
+        $one = LbLevelOne::all();
 
+        foreach($one as $o) {
+            $two[] = LbLevelTwo::where('level_one_id', $o->id)->get();
 
-    //level one  that sells products with min-max% discounts
-Route::get('/test/level/one/discount/{id}/{min}/{max}', function ($id, $min, $max) {
-        $arr = [];
-        $discountProduct = DB::table('products')
-                            ->where('discount_percentage','>=',$min)
-                            ->where('discount_percentage','<=',$max);
-
-        $discountCode = DB::table('discount_products')
-                            ->where('discount','>=',$min)
-                            ->where('discount','<=',$max);
-
-        $brands = DB::table('users')->where('dummy', 0)->where('private',0);
-
-
-        $brand_list_products = DB::table('lb_level_one','one')
-
-                                  ->select('one.Id as id', 'one.lb_category_id as lb_category_id', 'one.lb_name as lb_name','one.lb_order_no as lb_order_no', 'one.created_at as created_at','one.updated_at as updated_at', 'one.discount as discount',  DB::raw('( CASE WHEN discount_product.discount_percentage IS NULL THEN  0 ELSE discount_product.discount_percentage END) + ( CASE WHEN discount_code.discount IS NULL THEN  0 ELSE discount_code.discount END) + ( CASE WHEN two.discount IS NULL THEN  0 ELSE two.discount END) + ( CASE WHEN one.discount IS NULL THEN  0 ELSE one.discount END)as total_discount'))
-
-                                   ->leftjoin('lb_level_two as two', 'one.Id','=','two.level_one_id')
-                                   ->leftjoin('lb_lavel_three as three', 'two.Id','=','three.lavel_two_Id')
-                                   ->leftjoinSub(
-                                                $brands, 'brands',
-                                                function($join)
-                                                {
-                                                    $join->on('three.user_Id', '=', 'brands.Id');
-                                                })
-
-                                  ->leftjoinSub(
-                                            $discountProduct, 'discount_product',
-                                            function($join)
-                                            {
-                                                $join->on('discount_product.user_id', '=', 'brands.Id');
-                                            })
-                                  ->leftjoinSub(
-                                            $discountCode, 'discount_code',
-                                            function($join)
-                                            {
-                                                $join->on('discount_code.user_id', '=', 'brands.Id');
-                                            })
-
-                                  ->where('one.lb_category_id', $id);
-
-
-
-       $data = DB::table($brand_list_products,'brand_list_products')
-                  ->select('id', 'lb_category_id', 'lb_name','lb_order_no','created_at','updated_at','discount', DB::raw('AVG(total_discount) as ave_discount'))
-                  ->where('total_discount','>=',$min)
-                  ->where('total_discount','<=',$max)
-                  ->groupBy('id')
-                  ->get();
-
-
-        foreach($data as $d) {
-
-             $arr[] = [
-                'Id' => $d->id,
-                'lb_category_id' => $d->lb_category_id,
-                'lb_name' => $d->lb_name,
-                'lb_order_no' => $d->lb_order_no,
-                'created_at' => $d->created_at,
-                'updated_at' => $d->updated_at,
-                'discount' => $d->discount,
-                'ave_discount' =>  $d->ave_discount,
-
-            ];
         }
 
-        return response()->json($arr);
+        foreach($two as $t) {
+            $three[] = LbLevelThree::where('lavel_two_id', $t->id)->get();
+        }
+
+        $data = [
+            'level_one' => $one,
+            'level_two' => $two,
+            'level_three' => $three
+        ];
+
+        return response()->json($data);
 
     });
+
+    Route::post('/checkout/test', [CheckoutController::class, 'checkout_test']);
