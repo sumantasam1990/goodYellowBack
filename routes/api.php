@@ -1564,18 +1564,20 @@ Route::post('/vendor/signup', function (Request $request) {
 
         foreach($data as $d) {
 
-            $brandPhotos = BrandPhoto::where('user_id', $d->uid)->where('type', 'photos_of_brand')->take(4)->get();
+            //$brandPhotos = BrandPhoto::where('user_id', $d->uid)->where('type', 'photos_of_brand')->take(4)->get();
 
             $brandphoto_brand = BrandPhoto::where('user_id', $d->uid)->where('type', 'brand')->take(1)->get();
             $brandphoto_main = BrandPhoto::where('user_id', $d->uid)->where('type', 'main')->take(1)->get();
 
-            $maxDiscount = Product::where('user_id', $d->uid)->max('discount_percentage');
+            $maxDiscountProduct = Product::where('user_id', $d->uid)->max('discount_percentage');
 
+            $maxDiscountCode = DiscountProduct::where('user_id', $d->uid)->max('discount');
 
+            $max = [ $maxDiscountProduct, $maxDiscountCode ];
 
-            if(count($brandPhotos) > 0) {
-                $brandPhotos = $brandPhotos;
-            } elseif(count($brandphoto_brand) > 0) {
+            $maxDiscount = max($max);
+
+            if(count($brandphoto_brand) > 0) {
                 $brandPhotos = $brandphoto_brand;
             } elseif(count($brandphoto_main) > 0) {
                 $brandPhotos = $brandphoto_main;
@@ -1588,8 +1590,8 @@ Route::post('/vendor/signup', function (Request $request) {
                 'leaderboard' => $d->title,
                 'sales' => '0',
                 'customers' => '0',
-                'brand_photos' => $brandPhotos,
-                'discount' => number_format($maxDiscount, 2),
+                'brand_photos' => $brandPhotos[0]->url ?? '',
+                'discount' => number_format($maxDiscount),
                 'dummy_customers' => $d->dummy_customers,
                 'dummy_sales' => $d->dummy_sales,
                 'dummy_discount' => $d->dummy_discount,
@@ -1685,7 +1687,7 @@ Route::post('/vendor/signup', function (Request $request) {
             'cover_photo' => $brandPhotoCover->url ?? '',
             'brand_photo' => $brandPhotoBrand->url ?? '',
             'brand_description' => $brandInfo->txt ?? '',
-            'max_discount' => number_format($maxDiscount, 2),
+            'max_discount' => number_format($maxDiscount),
             'subscribed' => count($subscriptionChk) > 0 ? 'Yes' : 'No',
             'total_subscribers' => number_format(count($subscribersCount), 0),
         );
@@ -2546,6 +2548,9 @@ Route::get('/claudia/level/three/subscribers/brands/{id}', function ($id) {
 Route::get('/level/one/discount/{id}/{min}/{max}', [AlgorithmController::class, 'discount_level_one']);
 Route::get('/level/two/discount/{id}/{min}/{max}', [AlgorithmController::class, 'discount_level_two']);
 Route::get('/level/three/discount/{id}/{min}/{max}', [AlgorithmController::class, 'discount_level_three']);
+
+
+Route::get('/test/level/one/discount/{id}/{min}/{max}', [AlgorithmController::class, 'test_discount_level_one']);
 
 
 
