@@ -4,7 +4,7 @@
     <div class="row">
         <div class="col-md-12 mx-auto">
             <div class="table-responsive">
-                <h2 class="fs-2 fw-bold">All Users</h2>
+                <h2 class="fs-2 fw-bold">All Brands</h2>
                 @if (count($users) > 0)
                 <table class="table table-bordered table-striped">
                     <thead>

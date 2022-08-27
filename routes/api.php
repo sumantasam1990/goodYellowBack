@@ -2268,18 +2268,22 @@ Route::post('/vendor/signup', function (Request $request) {
     });
 
 
-    Route::get('/discount/product/send/email/{id}', function ($id) {
+    Route::get('/discount/product/send/email/{id}/{bid}', function ($id, $bid) {
 
         try {
             $discount = DiscountProduct::where('id', $id)->get();
 
+            $user = User::where('id', $discount[0]->user_id)->select('company')->first();
+
+            $buyer = BuyerUser::where('id', $bid)->select('email', 'fname')->first();
+
             $emailData = [
                 'discounts' => $discount,
-                'name' => 'Bajcloud',
-                'buyer' => 'Sumanta'
+                'name' => $user->company,
+                'buyer' => $buyer->fname
             ];
 
-            Mail::to('sumantasam1990@gmail.com')->send(new MailDiscountProduct($emailData));
+            Mail::to($buyer->email)->send(new MailDiscountProduct($emailData));
 
             return response()->json('success');
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\LbLevelOne;
 use App\Models\LbLevelTwo;
 use App\Models\LbLevelThree;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\Subscriptions;
 use Illuminate\Support\Facades\DB;
@@ -273,46 +274,5 @@ class AlgorithmController extends Controller
 
     // -----------------------------------------------------
 
-    public function test_discount_level_one($id,$min,$max)
-    {
-        $oneArray = [];
-        $twoIds = [];
-        $threeIds = [];
 
-        $three = DB::select('select t1.lavel_two_id, t1.lb_three_name, count(distinct(s.buyer_id)) as subscribers,
-p.discount_percentage as highest_discount
-from lb_lavel_three t1
-left join subscriptions s
-on t1.user_id = s.user_id
-left join products p on s.user_id = p.user_id
-where p.discount_percentage >= 11
-and p.discount_percentage <= 100
-group by t1.lb_three_name
-order by highest_discount DESC');
-
-        foreach($three as $th) {
-            $threeIds[] = $th->lavel_two_id;
-        }
-
-        $two = LbLevelTwo::whereIn('id', $threeIds)->get();
-
-        foreach($two as $t) {
-            $twoIds[] = $t->level_one_id;
-        }
-
-        $one = LbLevelOne::whereIn('id', $twoIds)->get();
-
-        foreach($one as $o) {
-            $oneArray[] = [
-                'lb_name' => $o->lb_name,
-                'Id' => $o->id,
-            ];
-        }
-
-
-
-
-
-        return response()->json($oneArray);
-    }
 }

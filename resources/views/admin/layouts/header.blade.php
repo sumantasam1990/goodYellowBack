@@ -45,7 +45,11 @@ label {
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link" href="{{ route('users.list') }}">All Users</a>
+          <a class="nav-link" href="{{ route('users.list') }}">All Brands</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{{ route('buyers.list') }}">All Buyers</a>
         </li>
 
         <li class="nav-item dropdown">

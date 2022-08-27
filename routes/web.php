@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminBuyersController;
 use App\Models\User;
 use App\Models\Product;
 use App\Models\LbLevelOne;
@@ -18,8 +19,13 @@ use App\Http\Controllers\AdminLeaderboardList;
 use App\Http\Controllers\DiscountListController;
 use App\Http\Controllers\PaymentController;
 use App\Models\AddToCart;
+use App\Models\BuyerUser;
 use App\Models\DiscountImages;
 use App\Models\ProductImages;
+
+
+
+
 
 Route::get('/', function () {
     return 'Unauthorize access';
@@ -203,6 +209,9 @@ Route::prefix('admin')->group(function () {
     Route::get('/discount/list/level/one/{did}/{cate_id}', [DiscountListController::class, 'level_one'])->name('discount.list.level.one');
 
     Route::post('/discount/list/level/one/post', [DiscountListController::class, 'level_one_post'])->name('discount.list.level.one.post');
+
+    Route::get('/buyers/list', [AdminBuyersController::class, 'buyers_list'])->name('buyers.list');
+
 
 
 
