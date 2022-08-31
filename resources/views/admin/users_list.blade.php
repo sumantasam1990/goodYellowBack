@@ -9,6 +9,7 @@
                 <table class="table table-bordered table-striped">
                     <thead>
                         <tr>
+                            <th>#</th>
                             <th>Brand Name</th>
                             <th>Founder's Name</th>
                             <th>Founder's Email</th>
@@ -24,6 +25,7 @@
 
                         @foreach ($users as $user)
                         <tr>
+                            <td>{{ $user['uid'] }}</td>
                             <td><a target="_blank" href="https://www.goodyellowco.com/storefront/{{ $user['company_slug'] }}">{{ $user['company'] }} </a></td>
                            <td>{{ $user['name'] }}</td>
                            <td>{{ $user['email'] }}</td>

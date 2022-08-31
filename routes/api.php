@@ -2434,6 +2434,7 @@ Route::post('/vendor/signup', function (Request $request) {
             ];
         }
 
+
         return response()->json($arr);
 
     });
@@ -2569,6 +2570,9 @@ Route::get('/claudia/level/three/subscribers/brands/{id}', function ($id) {
 Route::get('/level/one/discount/{id}/{min}/{max}', [AlgorithmController::class, 'discount_level_one']);
 Route::get('/level/two/discount/{id}/{min}/{max}', [AlgorithmController::class, 'discount_level_two']);
 Route::get('/level/three/discount/{id}/{min}/{max}', [AlgorithmController::class, 'discount_level_three']);
+
+Route::get('/discount/leaderboards/{slug}/{min}/{max}', [AlgorithmController::class, 'discount_leaderboards']);
+
 
 
 // Route::get('/test/level/one/discount/{id}/{min}/{max}', [AlgorithmController::class, 'test_discount_level_one']);
