@@ -78,6 +78,10 @@ label {
           <a class="nav-link" href="{{ route('discount.list.add') }}">Add Discount List</a>
         </li>
 
+        <li class="nav-item">
+          <a class="nav-link text-danger fw-bold" href="{{ route('admin.logout') }}">Logout</a>
+        </li>
+
       </ul>
 
     </div>

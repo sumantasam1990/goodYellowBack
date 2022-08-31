@@ -11,8 +11,12 @@ class AdminBuyersController extends Controller
 {
     use CustomPagination;
 
-    public function buyers_list()
+    public function buyers_list(Request $request)
     {
+        if (!$request->session()->has('loggedIn')) {
+            return redirect(route('admin.login'));
+        }
+
         $users = BuyerUser::orderBy('created_at', 'DESC')->get();
 
         foreach($users as $u) {

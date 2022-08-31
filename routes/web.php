@@ -34,7 +34,42 @@ Route::get('/', function () {
 
 Route::prefix('admin')->group(function () {
 
-    Route::get('/users/list', function () {
+    Route::get('/', function () {
+
+        return view('admin.login');
+
+
+    })->name('admin.login');
+
+    Route::get('/logout', function (Request $request) {
+
+        $request->session()->forget('loggedIn');
+
+        return redirect(route('admin.login'));
+
+
+    })->name('admin.logout');
+
+    Route::post('/login/post', function (Request $request) {
+
+        if($request->username == 'admin_good.yellow' && $request->password == 'pNwcJ&78eKZ2JPFL') {
+            $request->session()->put('loggedIn', 'logged');
+            return redirect(route('users.list'));
+        } else {
+            $request->session()->forget('loggedIn');
+
+            return redirect(route('admin.login'));
+        }
+
+
+    })->name('admin.login.post');
+
+    Route::get('/users/list', function (Request $request) {
+
+        if (!$request->session()->has('loggedIn')) {
+            return redirect(route('admin.login'));
+        }
+
 
         //$users = User::where('dummy', 0)->get();
 
@@ -94,12 +129,6 @@ Route::prefix('admin')->group(function () {
 
 
     })->name('user.delete');
-
-
-
-
-
-
 
 
     Route::get('/users/list/level/{id}', function (int $id) {

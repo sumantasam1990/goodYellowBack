@@ -1559,8 +1559,23 @@ Route::post('/vendor/signup', function (Request $request) {
     Route::get('/leaderboard/brands/list/{slug}', function ($slug) {
 
         $arr = [];
+        $userIds = [];
 
-        $data = DB::table('lb_lavel_three')->join('users', 'lb_lavel_three.user_id', '=', 'users.id')->where('lb_lavel_three.slug', '=', $slug)->select('users.id as uid', 'users.company', 'lb_lavel_three.lb_three_name as title', 'users.company_slug', 'users.dummy_customers', 'users.dummy_sales', 'users.dummy_discount', 'users.dummy', 'users.private')->groupBy('lb_lavel_three.slug')->get();
+        $level_three_user_id = LbLevelThree::where('slug', $slug)->where('user_id', '!=', '')->where('category_id', '!=', '')->select('user_id')->get();
+
+        foreach($level_three_user_id as $th_id) {
+            $userIds[] = $th_id->user_id;
+        }
+
+        //dd($userIds);
+
+       $data = DB::table('users')
+       ->whereIn('users.id', $userIds)
+       ->select('users.id as uid', 'users.company', 'users.company_slug', 'users.dummy_customers', 'users.dummy_sales', 'users.dummy_discount', 'users.dummy', 'users.private')
+       ->groupBy('users.company')
+       ->get();
+
+
 
         foreach($data as $d) {
 
@@ -1581,13 +1596,15 @@ Route::post('/vendor/signup', function (Request $request) {
                 $brandPhotos = $brandphoto_brand;
             } elseif(count($brandphoto_main) > 0) {
                 $brandPhotos = $brandphoto_main;
+            } else {
+                $brandPhotos = "https://www.goodyellowco.com/assets/imgs/default_gy.webp";
             }
 
             $arr[] = [
                 'user_id' => $d->uid,
                 'company' => $d->company,
                 'slug' => $d->company_slug,
-                'leaderboard' => $d->title,
+                //'leaderboard' => $d->title,
                 'sales' => '0',
                 'customers' => '0',
                 'brand_photos' => $brandPhotos[0]->url ?? '',
@@ -2554,9 +2571,9 @@ Route::get('/level/two/discount/{id}/{min}/{max}', [AlgorithmController::class, 
 Route::get('/level/three/discount/{id}/{min}/{max}', [AlgorithmController::class, 'discount_level_three']);
 
 
-Route::get('/test/level/one/discount/{id}/{min}/{max}', [AlgorithmController::class, 'test_discount_level_one']);
+// Route::get('/test/level/one/discount/{id}/{min}/{max}', [AlgorithmController::class, 'test_discount_level_one']);
 
-
+Route::get('/fake_subs/{uid}/{number}', [AlgorithmController::class, 'fake_subs']);
 
 
 
