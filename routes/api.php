@@ -1401,11 +1401,18 @@ Route::post('/vendor/signup', function (Request $request) {
         //check email exist or not
 
         $userEmaill = User::where('email', $request->email)->select('email')->get();
+         $userCompany = User::where('company', $request->company)->select('company')->get();
         $data = [];
 
         if(count($userEmaill) > 0) {
             $data = [
                 'msg' => 'Email already exist! Please try with another email.'
+            ];
+
+            return json_encode([$data]);
+        } elseif(count($userCompany) > 0) {
+            $data = [
+                'msg' => 'Company already exist! Please try with another company name.'
             ];
 
             return json_encode([$data]);
