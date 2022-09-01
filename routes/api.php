@@ -48,6 +48,8 @@ use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\BuyerAccountController;
 use App\Mail\DiscountProduct as MailDiscountProduct;
 use App\Http\Controllers\AlgorithmController;
+use App\Http\Controllers\MinimumDiscountInventoryController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -2617,3 +2619,5 @@ Route::get('/fake_subs/{uid}/{number}', [AlgorithmController::class, 'fake_subs'
     });
 
     Route::post('/checkout/test', [CheckoutController::class, 'checkout_test']);
+
+    Route::get('/discount/inventory/minimum/set/{uid}', [MinimumDiscountInventoryController::class, 'index']);
